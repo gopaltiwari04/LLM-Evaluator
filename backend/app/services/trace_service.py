@@ -1,5 +1,9 @@
+from fastapi import HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.project import Project
 from app.models.trace import Trace
 from app.schemas.trace import TraceCreate
 
@@ -8,6 +12,30 @@ async def create_trace(
     db: AsyncSession,
     trace_data: TraceCreate,
 ) -> Trace:
+    # Verify that the target project exists.
+    result = await db.execute(
+        select(Project).where(Project.id == trace_data.project_id)
+    )
+    project = result.scalar_one_or_none()
+
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+
+    # Prevent duplicate trace IDs.
+    result = await db.execute(
+        select(Trace).where(Trace.trace_id == trace_data.trace_id)
+    )
+    existing_trace = result.scalar_one_or_none()
+
+    if existing_trace is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Trace already exists",
+        )
+
     trace = Trace(
         trace_id=trace_data.trace_id,
         project_id=trace_data.project_id,
@@ -28,7 +56,15 @@ async def create_trace(
 
     db.add(trace)
 
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Trace already exists",
+        )
+
     await db.refresh(trace)
 
     return trace
