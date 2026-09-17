@@ -52,5 +52,8 @@ class TraceResponse(BaseModel):
     status: str
     error_message: str | None
 
-    metadata: dict | None
+    metadata: dict | None = Field(
+        default=None,
+        validation_alias="metadata_",
+    )
     created_at: datetime

@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from sqlalchemy import text
 
+from app.api.v1.organizations import router as organizations_router
+from app.api.v1.projects import router as projects_router
+
 from app.api.v1.traces import router as traces_router
 from app.db.database import AsyncSessionLocal
 
@@ -14,6 +17,15 @@ app = FastAPI(
 
 app.include_router(
     traces_router,
+    prefix="/api/v1",
+)
+app.include_router(
+    organizations_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    projects_router,
     prefix="/api/v1",
 )
 
