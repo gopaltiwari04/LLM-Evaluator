@@ -5,6 +5,7 @@ from app.api.v1.organizations import router as organizations_router
 from app.api.v1.projects import router as projects_router
 
 from app.api.v1.traces import router as traces_router
+from app.api.v1.api_keys import router as api_keys_router
 from app.db.database import AsyncSessionLocal
 
 
@@ -26,6 +27,10 @@ app.include_router(
 
 app.include_router(
     projects_router,
+    prefix="/api/v1",
+)
+app.include_router(
+    api_keys_router,
     prefix="/api/v1",
 )
 
