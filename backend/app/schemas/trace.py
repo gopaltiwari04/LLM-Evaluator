@@ -5,24 +5,24 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class TraceCreate(BaseModel):
-    trace_id: str = Field(min_length=1, max_length=100)
+    trace_id: str
     project_id: UUID
     prompt_version_id: UUID | None = None
 
-    provider: str = Field(min_length=1, max_length=100)
-    model: str = Field(min_length=1, max_length=255)
+    provider: str
+    model: str
 
     input: str
     output: str | None = None
 
-    input_tokens: int | None = Field(default=None, ge=0)
-    output_tokens: int | None = Field(default=None, ge=0)
-    total_tokens: int | None = Field(default=None, ge=0)
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    total_tokens: int | None = None
 
-    latency_ms: int | None = Field(default=None, ge=0)
-    estimated_cost: float | None = Field(default=None, ge=0)
+    latency_ms: int | None = None
+    estimated_cost: float | None = None
 
-    status: str = Field(default="success", max_length=50)
+    status: str = "success"
     error_message: str | None = None
 
     metadata: dict | None = None
@@ -56,4 +56,12 @@ class TraceResponse(BaseModel):
         default=None,
         validation_alias="metadata_",
     )
+
     created_at: datetime
+
+
+class TraceListResponse(BaseModel):
+    items: list[TraceResponse]
+    total: int
+    limit: int
+    offset: int

@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, HTTPException, status
+from fastapi.security import APIKeyHeader
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,8 +10,14 @@ from app.db.database import get_db
 from app.models.api_key import APIKey
 
 
+api_key_header = APIKeyHeader(
+    name="X-API-Key",
+    auto_error=False,
+)
+
+
 async def get_api_key(
-    x_api_key: str | None = Header(default=None),
+    x_api_key: str | None = Depends(api_key_header),
     db: AsyncSession = Depends(get_db),
 ) -> APIKey:
     if not x_api_key:
