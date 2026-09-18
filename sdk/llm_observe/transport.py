@@ -1,3 +1,6 @@
+from concurrent.futures import ThreadPoolExecutor
+from typing import Callable
+
 import httpx
 
 from .models import TraceData
@@ -12,7 +15,48 @@ class ObservatoryTransport:
         self.api_key = api_key
         self.endpoint = endpoint.rstrip("/")
 
+        self._executor = ThreadPoolExecutor(
+            max_workers=2,
+            thread_name_prefix="llm-observatory",
+        )
+
     def send_trace(self, trace: TraceData) -> None:
+        """
+        Send telemetry synchronously.
+
+        This remains available for explicit synchronous use/testing.
+        """
+        self._post_trace(trace)
+
+    def send_trace_async(
+        self,
+        trace: TraceData,
+    ) -> None:
+        """
+        Submit telemetry in the background.
+
+        The customer's application does not wait for the
+        Observatory API request to complete.
+        """
+        self._executor.submit(
+            self._safe_post_trace,
+            trace,
+        )
+
+    def _safe_post_trace(
+        self,
+        trace: TraceData,
+    ) -> None:
+        try:
+            self._post_trace(trace)
+        except Exception:
+            # Observability must never crash the customer's application.
+            pass
+
+    def _post_trace(
+        self,
+        trace: TraceData,
+    ) -> None:
         payload = {
             "trace_id": trace.trace_id,
             "project_id": trace.project_id,
@@ -41,3 +85,9 @@ class ObservatoryTransport:
         )
 
         response.raise_for_status()
+
+    def shutdown(self) -> None:
+        """
+        Gracefully stop the SDK background executor.
+        """
+        self._executor.shutdown(wait=True)

@@ -51,6 +51,6 @@ class LLMObserver:
             metadata=metadata,
         )
 
-        self.transport.send_trace(trace)
+        self.transport.send_trace_async(trace)
 
         return trace_id
